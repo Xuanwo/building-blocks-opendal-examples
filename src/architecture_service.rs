@@ -1,5 +1,5 @@
 use opendal::raw::{Access, AccessorInfo, OpRead, OpStat, RpRead, RpStat};
-use opendal::{Builder, Configurator, EntryMode, Metadata, Scheme};
+use opendal::{Builder, Capability, Configurator, EntryMode, Metadata, Scheme};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -46,6 +46,10 @@ impl Access for CmuService {
     fn info(&self) -> Arc<AccessorInfo> {
         let mut info = AccessorInfo::default();
         info.set_name(&self.dj);
+        info.set_native_capability(Capability {
+            stat: true,
+            ..Default::default()
+        });
 
         Arc::new(info)
     }
