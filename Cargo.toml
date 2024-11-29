@@ -1,0 +1,9 @@
+[package]
+name = "building-blocks-opendal-examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.93"
+opendal = { version = "0.50.2", features = ["services-s3"] }
+serde = { version = "1.0.215", features = ["derive"] }

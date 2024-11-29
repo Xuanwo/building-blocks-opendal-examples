@@ -1,37 +1,23 @@
-use opendal::raw::{Access, AccessorInfo, Layer, OpStat, RpStat};
-use std::sync::Arc;
+use crate::architecture_layer::CmuLayer;
+use crate::architecture_service::CmuConfig;
+use opendal::{Buffer, Operator};
 
-#[derive(Debug)]
-pub struct CmuLayer;
+pub async fn rock() -> anyhow::Result<()> {
+    let cfg = CmuConfig {
+        dj: "sorry, no dj today".to_string(),
+    };
+    let op = Operator::from_config(cfg)?.layer(CmuLayer).finish();
 
-impl<A: Access> Layer<A> for CmuLayer {
-    type LayeredAccess = HelloAccessor<A>;
+    // write
+    op.write("path/to/db", "hello dj".to_string()).await?;
 
-    fn layer(&self, inner: A) -> Self::LayeredAccess {
-        HelloAccessor { inner }
-    }
-}
+    // read
+    let _: Buffer = op.read("path/to/db").await?;
 
-#[derive(Debug)]
-pub struct HelloAccessor<A: Access> {
-    inner: A,
-}
+    // metadata
+    let meta = op.stat("path/to/db").await?;
+    println!("size: {}", meta.content_length());
+    println!("etag: {:?}", meta.etag());
 
-impl<A: Access> Access for HelloAccessor<A> {
-    type Reader = A::Reader;
-    type Writer = A::Writer;
-    type Lister = A::Lister;
-    type BlockingReader = A::BlockingReader;
-    type BlockingWriter = A::BlockingWriter;
-    type BlockingLister = A::BlockingLister;
-
-    fn info(&self) -> Arc<AccessorInfo> {
-        self.inner.info()
-    }
-
-    async fn stat(&self, path: &str, args: OpStat) -> opendal::Result<RpStat> {
-        println!("Hello, CMU!");
-
-        self.inner.stat(path, args).await
-    }
+    Ok(())
 }

@@ -1,32 +1,37 @@
-use opendal::raw::{Access, AccessorInfo, OpRead, OpStat, RpRead, RpStat};
-use opendal::{EntryMode, Metadata};
+use opendal::raw::{Access, AccessorInfo, Layer, OpStat, RpStat};
 use std::sync::Arc;
 
 #[derive(Debug)]
-struct CmuBackend;
+pub struct CmuLayer;
 
-impl Access for CmuBackend {
-    type Reader = ();
-    type Writer = ();
-    type Lister = ();
-    type BlockingReader = ();
-    type BlockingWriter = ();
-    type BlockingLister = ();
+impl<A: Access> Layer<A> for CmuLayer {
+    type LayeredAccess = HelloAccessor<A>;
+
+    fn layer(&self, inner: A) -> Self::LayeredAccess {
+        HelloAccessor { inner }
+    }
+}
+
+#[derive(Debug)]
+pub struct HelloAccessor<A: Access> {
+    inner: A,
+}
+
+impl<A: Access> Access for HelloAccessor<A> {
+    type Reader = A::Reader;
+    type Writer = A::Writer;
+    type Lister = A::Lister;
+    type BlockingReader = A::BlockingReader;
+    type BlockingWriter = A::BlockingWriter;
+    type BlockingLister = A::BlockingLister;
 
     fn info(&self) -> Arc<AccessorInfo> {
-        let info = AccessorInfo::default();
-        Arc::new(info)
+        self.inner.info()
     }
 
     async fn stat(&self, path: &str, args: OpStat) -> opendal::Result<RpStat> {
-        let _ = (path, args);
-        Ok(RpStat::new(
-            Metadata::new(EntryMode::FILE).with_content_length(42),
-        ))
-    }
+        println!("Hello, CMU!");
 
-    async fn read(&self, path: &str, args: OpRead) -> opendal::Result<(RpRead, Self::Reader)> {
-        let _ = (path, args);
-        Ok((RpRead::default(), ()))
+        self.inner.stat(path, args).await
     }
 }
